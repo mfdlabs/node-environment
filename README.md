@@ -1,3 +1,5 @@
-# Node.js Template
+# @mfdlabs/environment
 
-This is a template for all node-js packages created by MFDLABS.
+This library provides a class that can be inherited to provide a consistent environment variable interface.
+
+## TODO
