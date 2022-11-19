@@ -20,6 +20,13 @@
     Written by: Nikita Petko
 */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+/**
+ * Represents a method that converts the given value to the given type.
+ */
+export type TypeConverter<T> = (value: any) => T;
+
 /**
  * A simple helper that converts the given value to the given type.
  *
@@ -63,5 +70,22 @@ export default abstract class TypeConverters {
     } catch {
       return defaultReturn;
     }
+  }
+
+  /**
+   * Converts the given string array to an array of T.
+   * 
+   * @example
+   * ```typescript
+   * import convert from '@lib/environment/type_converters';
+   * 
+   * convert.toArray(['1', '2', '3'], (value) => parseInt(value, 10)); // [1, 2, 3]
+   * ```
+   * @param {string[]} value The string array to be converted.
+   * @param {TypeConverter<T>} converter The converter function.
+   * @returns {T[]} The converted array.
+   */
+  public static toArray<T>(value: string[], converter: TypeConverter<T>): T[] {
+    return value.map(converter);
   }
 }

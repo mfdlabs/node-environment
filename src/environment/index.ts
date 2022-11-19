@@ -30,14 +30,15 @@ import * as fs from 'fs';
 export type DefaultValueGetter<T> = T | (() => T);
 
 /**
- * A type that represents all the possible types of environment variables. Use this if you want your environment variable to be of a specific type or if you want the default to 
+ * A type that represents all the possible types of environment variables. Use this if you want your environment variable to be of a specific type or if you want the default to
  * be null or undefined.
  */
-export type EnvironmentVariableType = 'boolean' | 'number' | 'bigint' | 'array' | 'object' | 'regexp' | 'string';
+type EnvironmentVariableType = 'boolean' | 'number' | 'bigint' | 'object' | 'regexp' | 'string';
+type EnvironmentVariableArrayType = `array<${EnvironmentVariableType}>`;
 
 /**
  * A class for loading environment variables from .env files programmatically.
- * 
+ *
  * Also provides methods for checking if the current environment is inside of a docker container.
  */
 export default class Environment {
@@ -51,14 +52,18 @@ export default class Environment {
    *
    * @param {string} key The key of the environment variable.
    * @param {DefaultValueGetter<T>} [defaultValue] The default value of the environment variable.
-   * @param {EnvironmentVariableType} [optionalType] The type of the environment variable.
+   * @param {EnvironmentVariableType | EnvironmentVariableArrayType} [optionalType] The type of the environment variable.
    * @returns {T} The value of the environment variable.
    * @template T The type of the environment variable.
    * @protected This method is a protected method of the Environment class.
    * @memberof Environment
    */
-  protected getOrDefault<T>(key: string, defaultValue?: DefaultValueGetter<T>, optionalType?: EnvironmentVariableType): T {
-    let type = typeof defaultValue as string;
+  protected getOrDefault<T>(
+    key: string,
+    defaultValue?: DefaultValueGetter<T>,
+    optionalType?: EnvironmentVariableType | EnvironmentVariableArrayType,
+  ): T {
+    let type: string = optionalType ?? typeof defaultValue;
 
     // If default value is null, undefined or any type that cannot be inferred then throw
     if (defaultValue === null || defaultValue === undefined) {
@@ -66,6 +71,14 @@ export default class Environment {
     }
 
     const value = process.env[key];
+
+    let arrayType: EnvironmentVariableType | undefined = undefined;
+
+    if (type.startsWith('array<')) {
+      arrayType = type.replace('array<', '').replace('>', '') as EnvironmentVariableType;
+
+      type = 'array';
+    }
 
     switch (type) {
       case 'boolean':
@@ -75,11 +88,27 @@ export default class Environment {
       case 'bigint':
         return BigInt(value ?? defaultValue?.toString()) as unknown as T;
       case 'function':
-        return (value as unknown as T) || (defaultValue as (() => T))?.call(null);
+        return (value as unknown as T) || (defaultValue as () => T)?.call(null);
       case 'array':
-        return (value?.split(',') as unknown as T) ?? defaultValue as T;
-      case 'object':
-        return JSON.parse(value ?? defaultValue?.toString()) as unknown as T;
+        // eslint-disable-next-line no-case-declarations
+        const arr = value?.split(',');
+
+        if (arr === undefined) return defaultValue as unknown as T;
+
+        switch (arrayType) {
+          case 'boolean':
+            return typeConverters.toArray<boolean>(arr, (v) => typeConverters.toBoolean(v)) as unknown as T;
+          case 'number':
+            return typeConverters.toArray<number>(arr, (v) => parseFloat(v)) as unknown as T;
+          case 'bigint':
+            return typeConverters.toArray<bigint>(arr, (v) => BigInt(v)) as unknown as T;
+          case 'object':
+            return typeConverters.toArray<object>(arr, (v) => JSON.parse(v)) as unknown as T;
+          case 'regexp':
+            return typeConverters.toArray<RegExp>(arr, (v) => new RegExp(v)) as unknown as T;
+          default:
+            return arr as unknown as T;
+        }
       case 'regexp':
         return new RegExp(value ?? (defaultValue as RegExp).source, (defaultValue as RegExp).flags) as unknown as T;
       default:
@@ -89,11 +118,11 @@ export default class Environment {
         if (defaultValue instanceof RegExp) {
           return new RegExp(value ?? defaultValue.source, defaultValue.flags) as unknown as T;
         }
-        if (typeof defaultValue === 'object') {
+        if (type === 'object') {
           return JSON.parse(value ?? JSON.stringify(defaultValue)) as unknown as T;
         }
 
-        return (value as unknown as T) || defaultValue as unknown as T;
+        return (value as unknown as T) || (defaultValue as unknown as T);
     }
   }
 

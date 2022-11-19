@@ -20,6 +20,7 @@
     Written by: Nikita Petko
 */
 
+/* eslint-disable quotes */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import environment from '../environment';
@@ -31,52 +32,47 @@ jest.mock('fs');
 const testEnv = new environment();
 
 // tslint:disable-next-line: no-string-literal
-const _getOrDefault = testEnv['getOrDefault'];
+const getOrDefault = testEnv['getOrDefault'];
 
 describe('Environment Provider', () => {
-  describe('_getOrDefault', () => {
-    it('should throw if the default value is null or undefined', () => {
-      expect(() => _getOrDefault('FOO_BAR', undefined)).toThrow();
-      expect(() => _getOrDefault('FOO_BAR', null)).toThrow();
-    });
-
+  describe('getOrDefault', () => {
     it('should return the default value if the environment variable is not set', () => {
-      expect(_getOrDefault('FOO_BAR', 'default')).toEqual('default');
+      expect(getOrDefault('FOO_BAR', 'default')).toEqual('default');
     });
 
     it('should return the environment variable if it is set', () => {
       process.env.FOO_BAR = 'test';
-      expect(_getOrDefault('FOO_BAR', 'default')).toEqual('test');
+      expect(getOrDefault('FOO_BAR', 'default')).toEqual('test');
 
       delete process.env.FOO_BAR;
     });
 
     it('should deserialize boolean values from the environment when the default value is a boolean', () => {
       process.env.FOO_BAR = 'true';
-      expect(_getOrDefault('FOO_BAR', false)).toEqual(true);
+      expect(getOrDefault('FOO_BAR', false)).toEqual(true);
 
       delete process.env.FOO_BAR;
 
       process.env.FOO_BAR = 'false';
-      expect(_getOrDefault('FOO_BAR', false)).toEqual(false);
+      expect(getOrDefault('FOO_BAR', false)).toEqual(false);
 
       delete process.env.FOO_BAR;
     });
 
     it('should deserialize number values from the environment when the default value is a number', () => {
       process.env.FOO_BAR = '1';
-      expect(_getOrDefault('FOO_BAR', 0)).toEqual(1);
+      expect(getOrDefault('FOO_BAR', 0)).toEqual(1);
 
       delete process.env.FOO_BAR;
 
       process.env.FOO_BAR = '0';
-      expect(_getOrDefault('FOO_BAR', 0)).toEqual(0);
+      expect(getOrDefault('FOO_BAR', 0)).toEqual(0);
 
       delete process.env.FOO_BAR;
     });
 
     it('should use the default value as a number when the environment variable is not set and the env var is not found', () => {
-      expect(_getOrDefault('FOO_BAR_BEZ', 0)).toEqual(0);
+      expect(getOrDefault('FOO_BAR_BEZ', 0)).toEqual(0);
     });
 
     it('should call the callback function if the value is not set and the env var is not found', () => {
@@ -85,7 +81,7 @@ describe('Environment Provider', () => {
 
       delete process.env.FOO_BAR;
 
-      expect(_getOrDefault('FOO_BAR', callback)).toEqual('0');
+      expect(getOrDefault('FOO_BAR', callback)).toEqual('0');
 
       expect(callback.call).toHaveBeenCalled();
 
@@ -97,36 +93,85 @@ describe('Environment Provider', () => {
 
     it('should deserialize array values from the environment when the default value is an array', () => {
       process.env.FOO_BAR = '1,2,3';
-      expect(_getOrDefault('FOO_BAR', [])).toEqual(['1', '2', '3']);
+      expect(getOrDefault('FOO_BAR', [])).toEqual(['1', '2', '3']);
 
       delete process.env.FOO_BAR;
     });
 
-
     it('should deserialize array values from the environment when the default value is an array and the env var is not found', () => {
-      expect(_getOrDefault('FOO_BAR_BEZ', ['0'])).toEqual(['0']);
+      expect(getOrDefault('FOO_BAR_BEZ', ['0'])).toEqual(['0']);
     });
 
     it('should deserialize RegExp values from the environment when the default value is a RegExp', () => {
       process.env.FOO_BAR = '^foo$';
-      expect(_getOrDefault('FOO_BAR', /^foo$/)).toEqual(/^foo$/);
+      expect(getOrDefault('FOO_BAR', /^foo$/)).toEqual(/^foo$/);
 
       delete process.env.FOO_BAR;
     });
 
     it('should deserialize RegExp values from the environment when the default value is a RegExp and the env var is not found', () => {
-      expect(_getOrDefault('FOO_BAR_BEZ', /^foo$/)).toEqual(/^foo$/);
+      expect(getOrDefault('FOO_BAR_BEZ', /^foo$/)).toEqual(/^foo$/);
     });
 
     it('should deserialize object values from the environment when the default value is an object', () => {
       process.env.FOO_BAR = '{"foo":"bar"}';
-      expect(_getOrDefault('FOO_BAR', {})).toStrictEqual({ foo: 'bar' });
+      expect(getOrDefault('FOO_BAR', {})).toStrictEqual({ foo: 'bar' });
 
       delete process.env.FOO_BAR;
     });
 
     it('should deserialize object values from the environment when the default value is an object and the env var is not found', () => {
-      expect(_getOrDefault('FOO_BAR_BEZ', { foo: 'bar' })).toStrictEqual({ foo: 'bar' });
+      expect(getOrDefault('FOO_BAR_BEZ', { foo: 'bar' })).toStrictEqual({ foo: 'bar' });
+    });
+
+    it('should use the optional type if it specified', () => {
+      process.env.FOO_BAR = '1';
+      expect(getOrDefault('FOO_BAR', 0, 'number')).toEqual(1);
+      expect(getOrDefault('FOO_BAR', 0n, 'bigint').toString()).toEqual('1');
+
+      delete process.env.FOO_BAR;
+
+      expect(getOrDefault('FOO_BAR', 1n, 'bigint').toString()).toEqual('1');
+
+      process.env.FOO_BAR = '1,2,3';
+      expect(getOrDefault<number[]>('FOO_BAR', [], 'array<number>')).toEqual([1, 2, 3]);
+      expect(getOrDefault<bigint[]>('FOO_BAR', [], 'array<bigint>')).toEqual([1n, 2n, 3n]);
+      expect(getOrDefault<string[]>('FOO_BAR', [], 'array<string>')).toEqual(['1', '2', '3']);
+
+      process.env.FOO_BAR = 'true,false';
+      expect(getOrDefault<boolean[]>('FOO_BAR', [], 'array<boolean>')).toEqual([true, false]);
+
+      process.env.FOO_BAR = '{"foo":"bar"},{"foo":"baz"}';
+      expect(getOrDefault<{ foo: string }[]>('FOO_BAR', [], 'array<object>')).toStrictEqual([
+        { foo: 'bar' },
+        { foo: 'baz' },
+      ]);
+
+      process.env.FOO_BAR = '^foo$,^bar$';
+      expect(getOrDefault<RegExp[]>('FOO_BAR', [], 'array<regexp>')).toEqual([/^foo$/, /^bar$/]);
+
+      delete process.env.FOO_BAR;
+      expect(getOrDefault<bigint[]>('FOO_BAR', [1n], 'array<bigint>')).toEqual([1n]);
+      expect(getOrDefault<number[]>('FOO_BAR', [3, 2, 1], 'array<number>')).toEqual([3, 2, 1]);
+      expect(getOrDefault<string[]>('FOO_BAR', ['foo', 'bar'], 'array<string>')).toEqual(['foo', 'bar']);
+      expect(getOrDefault<boolean[]>('FOO_BAR', [false, true, false], 'array<boolean>')).toEqual([false, true, false]);
+      expect(getOrDefault<{ foo: string }[]>('FOO_BAR', [{ foo: 'bar' }], 'array<object>')).toStrictEqual([
+        { foo: 'bar' },
+      ]);
+
+      process.env.FOO_BAR = '^foo$';
+      expect(getOrDefault('FOO_BAR', /^foo$/, 'regexp')).toEqual(/^foo$/);
+
+      delete process.env.FOO_BAR;
+
+      expect(getOrDefault('FOO_BAR', /^foo$/, 'regexp')).toEqual(/^foo$/);
+
+      process.env.FOO_BAR = '{"foo":"bar"}';
+      expect(getOrDefault('FOO_BAR', {}, 'object')).toStrictEqual({ foo: 'bar' });
+
+      expect(getOrDefault('FOO_BAR', undefined, 'object')).toStrictEqual({ foo: 'bar' });
+
+      delete process.env.FOO_BAR;
     });
   });
 
@@ -176,7 +221,7 @@ describe('Environment Provider', () => {
   });
 
   describe('hasDockerCGroup', () => {
-    it('should return true if the system\'s cgroup contains the docker cgroup', () => {
+    it("should return true if the system's cgroup contains the docker cgroup", () => {
       const orignalPlatform = process.platform;
       Object.defineProperty(process, 'platform', {
         value: 'linux',
@@ -191,7 +236,7 @@ describe('Environment Provider', () => {
       });
     });
 
-    it('should return false if the system\'s cgroup does not contain the docker cgroup', () => {
+    it("should return false if the system's cgroup does not contain the docker cgroup", () => {
       const orignalPlatform = process.platform;
       Object.defineProperty(process, 'platform', {
         value: 'linux',
@@ -218,7 +263,7 @@ describe('Environment Provider', () => {
         value: orignalPlatform,
       });
     });
-    it('should return false if the system\'s cgroup does not exist', () => {
+    it("should return false if the system's cgroup does not exist", () => {
       const orignalPlatform = process.platform;
       Object.defineProperty(process, 'platform', {
         value: 'linux',
