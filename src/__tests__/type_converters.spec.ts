@@ -41,4 +41,10 @@ describe('Type Converters', () => {
       expect(typeConverters.toBoolean(null, false)).toEqual(false);
     });
   });
+
+  describe('toArray', () => {
+    it('should convert to an array', () => {
+      expect(typeConverters.toArray(['1', '2', '3'], v => parseInt(v))).toEqual([1, 2, 3]);
+    });
+  });
 });
