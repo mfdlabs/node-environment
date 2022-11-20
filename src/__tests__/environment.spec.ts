@@ -172,6 +172,10 @@ describe('Environment Provider', () => {
       expect(getOrDefault('FOO_BAR', undefined, 'object')).toStrictEqual({ foo: 'bar' });
 
       delete process.env.FOO_BAR;
+
+      expect(getOrDefault('FOO_BAR', null)).toBeNull();
+
+      delete process.env.FOO_BAR;
     });
   });
 

@@ -72,7 +72,7 @@ export default class Environment {
 
     // If default value is null, undefined or any type that cannot be inferred then throw
     if (defaultValue === null || defaultValue === undefined) {
-      type = optionalType;
+      type = optionalType || 'string';
     }
 
     const value = process.env[key];
