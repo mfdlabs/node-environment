@@ -20,7 +20,7 @@
 	Written by: Nikita Petko
 */
 
-import environment, { DefaultValueGetter } from './environment';
+import environment, { DefaultValueGetter, EnvironmentVariableType, EnvironmentVariableArrayType } from './environment';
 
-export { environment, DefaultValueGetter };
+export { environment, DefaultValueGetter, EnvironmentVariableArrayType, EnvironmentVariableType };
 export default environment;

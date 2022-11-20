@@ -33,8 +33,13 @@ export type DefaultValueGetter<T> = T | (() => T);
  * A type that represents all the possible types of environment variables. Use this if you want your environment variable to be of a specific type or if you want the default to
  * be null or undefined.
  */
-type EnvironmentVariableType = 'boolean' | 'number' | 'bigint' | 'object' | 'regexp' | 'string';
-type EnvironmentVariableArrayType = `array<${EnvironmentVariableType}>`;
+export type EnvironmentVariableType = 'boolean' | 'number' | 'bigint' | 'object' | 'regexp' | 'string';
+
+/**
+ * A type that represents all the possible array types of environment variables. Use this if you want your environment variable to be of a specific array type or if you want the
+ * default to be null or undefined.
+ */
+export type EnvironmentVariableArrayType = `array<${EnvironmentVariableType}>`;
 
 /**
  * A class for loading environment variables from .env files programmatically.
@@ -58,7 +63,7 @@ export default class Environment {
    * @protected This method is a protected method of the Environment class.
    * @memberof Environment
    */
-  protected getOrDefault<T>(
+  protected getOrDefault<T = unknown>(
     key: string,
     defaultValue?: DefaultValueGetter<T>,
     optionalType?: EnvironmentVariableType | EnvironmentVariableArrayType,
