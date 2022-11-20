@@ -49,7 +49,13 @@ The package exports the following:
 ```typescript
 
 /* A type that represents the default value getter function */
-export type DefaultValueGetter<T> = () => T;
+type DefaultValueGetter<T> = ...;
+
+/* A type that represents every possible type of environment variable */
+type EnvironmentVariableType = ...;
+
+/* A type that represents every possible array type of environment variable */
+type EnvironmentVariableArrayType = ...;
 
 /* A class that can be inherited to provide a consistent environment variable interface */
 class environment { /* ... */ };
