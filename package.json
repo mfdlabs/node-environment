@@ -1,6 +1,6 @@
 {
   "name": "@mfdlabs/environment",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "A Node.js library for managing environment variables",
   "main": "lib/index.js",
   "types": "lib/types",

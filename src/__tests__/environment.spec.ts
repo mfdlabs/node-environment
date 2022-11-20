@@ -31,48 +31,95 @@ jest.mock('fs');
 
 const testEnv = new environment();
 
-// tslint:disable-next-line: no-string-literal
-const getOrDefault = testEnv['getOrDefault'];
-
 describe('Environment Provider', () => {
+  describe('isVariableOverridden', () => {
+    it('should return true if the variable is overridden', () => {
+      testEnv.overrideVariable('TEST', 'test');
+
+      expect(testEnv.isVariableOverridden('TEST')).toBe(true);
+
+      testEnv.removeOverriddenVariable('TEST');
+    });
+
+    it('should return false if the variable is not overridden', () => {
+      expect(testEnv.isVariableOverridden('TEST')).toBe(false);
+    });
+  });
+
+  describe('overrideVariable', () => {
+    it('should override the variable', () => {
+      testEnv.overrideVariable('TEST', 'test');
+
+      expect(testEnv.getOverridenVariable('TEST')).toBe('test');
+
+      testEnv.removeOverriddenVariable('TEST');
+    });
+  });
+
+  describe('getOverridenVariable', () => {
+    it('should return the overridden variable', () => {
+      testEnv.overrideVariable('TEST', 'test');
+
+      expect(testEnv.getOverridenVariable('TEST')).toBe('test');
+
+      testEnv.removeOverriddenVariable('TEST');
+    });
+  
+    it('should return undefined if the variable is not overridden', () => {
+      expect(testEnv.getOverridenVariable('TEST')).toBe(undefined);
+    });
+  });
+
+  describe('removeOverriddenVariable', () => {
+    it('should remove the overridden variable', () => {
+      testEnv.overrideVariable('TEST', 'test');
+
+      expect(testEnv.isVariableOverridden('TEST')).toBe(true);
+
+      testEnv.removeOverriddenVariable('TEST');
+
+      expect(testEnv.isVariableOverridden('TEST')).toBe(false);
+    });
+  });
+
   describe('getOrDefault', () => {
     it('should return the default value if the environment variable is not set', () => {
-      expect(getOrDefault('FOO_BAR', 'default')).toEqual('default');
+      expect(testEnv.getOrDefault('FOO_BAR', 'default')).toEqual('default');
     });
 
     it('should return the environment variable if it is set', () => {
       process.env.FOO_BAR = 'test';
-      expect(getOrDefault('FOO_BAR', 'default')).toEqual('test');
+      expect(testEnv.getOrDefault('FOO_BAR', 'default')).toEqual('test');
 
       delete process.env.FOO_BAR;
     });
 
     it('should deserialize boolean values from the environment when the default value is a boolean', () => {
       process.env.FOO_BAR = 'true';
-      expect(getOrDefault('FOO_BAR', false)).toEqual(true);
+      expect(testEnv.getOrDefault('FOO_BAR', false)).toEqual(true);
 
       delete process.env.FOO_BAR;
 
       process.env.FOO_BAR = 'false';
-      expect(getOrDefault('FOO_BAR', false)).toEqual(false);
+      expect(testEnv.getOrDefault('FOO_BAR', false)).toEqual(false);
 
       delete process.env.FOO_BAR;
     });
 
     it('should deserialize number values from the environment when the default value is a number', () => {
       process.env.FOO_BAR = '1';
-      expect(getOrDefault('FOO_BAR', 0)).toEqual(1);
+      expect(testEnv.getOrDefault('FOO_BAR', 0)).toEqual(1);
 
       delete process.env.FOO_BAR;
 
       process.env.FOO_BAR = '0';
-      expect(getOrDefault('FOO_BAR', 0)).toEqual(0);
+      expect(testEnv.getOrDefault('FOO_BAR', 0)).toEqual(0);
 
       delete process.env.FOO_BAR;
     });
 
     it('should use the default value as a number when the environment variable is not set and the env var is not found', () => {
-      expect(getOrDefault('FOO_BAR_BEZ', 0)).toEqual(0);
+      expect(testEnv.getOrDefault('FOO_BAR_BEZ', 0)).toEqual(0);
     });
 
     it('should call the callback function if the value is not set and the env var is not found', () => {
@@ -81,7 +128,7 @@ describe('Environment Provider', () => {
 
       delete process.env.FOO_BAR;
 
-      expect(getOrDefault('FOO_BAR', callback)).toEqual('0');
+      expect(testEnv.getOrDefault('FOO_BAR', callback)).toEqual('0');
 
       expect(callback.call).toHaveBeenCalled();
 
@@ -93,83 +140,99 @@ describe('Environment Provider', () => {
 
     it('should deserialize array values from the environment when the default value is an array', () => {
       process.env.FOO_BAR = '1,2,3';
-      expect(getOrDefault('FOO_BAR', [])).toEqual(['1', '2', '3']);
+      expect(testEnv.getOrDefault('FOO_BAR', [])).toEqual(['1', '2', '3']);
 
       delete process.env.FOO_BAR;
     });
 
     it('should deserialize array values from the environment when the default value is an array and the env var is not found', () => {
-      expect(getOrDefault('FOO_BAR_BEZ', ['0'])).toEqual(['0']);
+      expect(testEnv.getOrDefault('FOO_BAR_BEZ', ['0'])).toEqual(['0']);
     });
 
     it('should deserialize RegExp values from the environment when the default value is a RegExp', () => {
       process.env.FOO_BAR = '^foo$';
-      expect(getOrDefault('FOO_BAR', /^foo$/)).toEqual(/^foo$/);
+      expect(testEnv.getOrDefault('FOO_BAR', /^foo$/)).toEqual(/^foo$/);
 
       delete process.env.FOO_BAR;
     });
 
     it('should deserialize RegExp values from the environment when the default value is a RegExp and the env var is not found', () => {
-      expect(getOrDefault('FOO_BAR_BEZ', /^foo$/)).toEqual(/^foo$/);
+      expect(testEnv.getOrDefault('FOO_BAR_BEZ', /^foo$/)).toEqual(/^foo$/);
     });
 
     it('should deserialize object values from the environment when the default value is an object', () => {
       process.env.FOO_BAR = '{"foo":"bar"}';
-      expect(getOrDefault('FOO_BAR', {})).toStrictEqual({ foo: 'bar' });
+      expect(testEnv.getOrDefault('FOO_BAR', {})).toStrictEqual({ foo: 'bar' });
 
       delete process.env.FOO_BAR;
     });
 
     it('should deserialize object values from the environment when the default value is an object and the env var is not found', () => {
-      expect(getOrDefault('FOO_BAR_BEZ', { foo: 'bar' })).toStrictEqual({ foo: 'bar' });
+      expect(testEnv.getOrDefault('FOO_BAR_BEZ', { foo: 'bar' })).toStrictEqual({ foo: 'bar' });
     });
 
     it('should use the optional type if it specified', () => {
       process.env.FOO_BAR = '1';
-      expect(getOrDefault('FOO_BAR', 0, 'number')).toEqual(1);
-      expect(getOrDefault('FOO_BAR', 0n, 'bigint').toString()).toEqual('1');
+      expect(testEnv.getOrDefault('FOO_BAR', 0, 'number')).toEqual(1);
+      expect(testEnv.getOrDefault('FOO_BAR', 0n, 'bigint').toString()).toEqual('1');
 
       delete process.env.FOO_BAR;
 
-      expect(getOrDefault('FOO_BAR', 1n, 'bigint').toString()).toEqual('1');
+      expect(testEnv.getOrDefault('FOO_BAR', 1n, 'bigint').toString()).toEqual('1');
 
       process.env.FOO_BAR = '1,2,3';
-      expect(getOrDefault<number[]>('FOO_BAR', [], 'array<number>')).toEqual([1, 2, 3]);
-      expect(getOrDefault<bigint[]>('FOO_BAR', [], 'array<bigint>')).toEqual([1n, 2n, 3n]);
-      expect(getOrDefault<string[]>('FOO_BAR', [], 'array<string>')).toEqual(['1', '2', '3']);
+      expect(testEnv.getOrDefault<number[]>('FOO_BAR', [], 'array<number>')).toEqual([1, 2, 3]);
+      expect(testEnv.getOrDefault<bigint[]>('FOO_BAR', [], 'array<bigint>')).toEqual([1n, 2n, 3n]);
+      expect(testEnv.getOrDefault<string[]>('FOO_BAR', [], 'array<string>')).toEqual(['1', '2', '3']);
 
       process.env.FOO_BAR = 'true,false';
-      expect(getOrDefault<boolean[]>('FOO_BAR', [], 'array<boolean>')).toEqual([true, false]);
+      expect(testEnv.getOrDefault<boolean[]>('FOO_BAR', [], 'array<boolean>')).toEqual([true, false]);
 
       process.env.FOO_BAR = '{"foo":"bar"},{"foo":"baz"}';
-      expect(getOrDefault<{ foo: string }[]>('FOO_BAR', [], 'array<object>')).toStrictEqual([
+      expect(testEnv.getOrDefault<{ foo: string }[]>('FOO_BAR', [], 'array<object>')).toStrictEqual([
         { foo: 'bar' },
         { foo: 'baz' },
       ]);
 
       process.env.FOO_BAR = '^foo$,^bar$';
-      expect(getOrDefault<RegExp[]>('FOO_BAR', [], 'array<regexp>')).toEqual([/^foo$/, /^bar$/]);
+      expect(testEnv.getOrDefault<RegExp[]>('FOO_BAR', [], 'array<regexp>')).toEqual([/^foo$/, /^bar$/]);
 
       delete process.env.FOO_BAR;
-      expect(getOrDefault<bigint[]>('FOO_BAR', [1n], 'array<bigint>')).toEqual([1n]);
-      expect(getOrDefault<number[]>('FOO_BAR', [3, 2, 1], 'array<number>')).toEqual([3, 2, 1]);
-      expect(getOrDefault<string[]>('FOO_BAR', ['foo', 'bar'], 'array<string>')).toEqual(['foo', 'bar']);
-      expect(getOrDefault<boolean[]>('FOO_BAR', [false, true, false], 'array<boolean>')).toEqual([false, true, false]);
-      expect(getOrDefault<{ foo: string }[]>('FOO_BAR', [{ foo: 'bar' }], 'array<object>')).toStrictEqual([
+      expect(testEnv.getOrDefault<bigint[]>('FOO_BAR', [1n], 'array<bigint>')).toEqual([1n]);
+      expect(testEnv.getOrDefault<number[]>('FOO_BAR', [3, 2, 1], 'array<number>')).toEqual([3, 2, 1]);
+      expect(testEnv.getOrDefault<string[]>('FOO_BAR', ['foo', 'bar'], 'array<string>')).toEqual(['foo', 'bar']);
+      expect(testEnv.getOrDefault<boolean[]>('FOO_BAR', [false, true, false], 'array<boolean>')).toEqual([false, true, false]);
+      expect(testEnv.getOrDefault<{ foo: string }[]>('FOO_BAR', [{ foo: 'bar' }], 'array<object>')).toStrictEqual([
         { foo: 'bar' },
       ]);
 
       process.env.FOO_BAR = '^foo$';
-      expect(getOrDefault('FOO_BAR', /^foo$/, 'regexp')).toEqual(/^foo$/);
+      expect(testEnv.getOrDefault('FOO_BAR', /^foo$/, 'regexp')).toEqual(/^foo$/);
 
       delete process.env.FOO_BAR;
 
-      expect(getOrDefault('FOO_BAR', /^foo$/, 'regexp')).toEqual(/^foo$/);
+      expect(testEnv.getOrDefault('FOO_BAR', /^foo$/, 'regexp')).toEqual(/^foo$/);
 
       process.env.FOO_BAR = '{"foo":"bar"}';
-      expect(getOrDefault('FOO_BAR', {}, 'object')).toStrictEqual({ foo: 'bar' });
+      expect(testEnv.getOrDefault('FOO_BAR', {}, 'object')).toStrictEqual({ foo: 'bar' });
 
-      expect(getOrDefault('FOO_BAR', undefined, 'object')).toStrictEqual({ foo: 'bar' });
+      expect(testEnv.getOrDefault('FOO_BAR', undefined, 'object')).toStrictEqual({ foo: 'bar' });
+
+      delete process.env.FOO_BAR;
+
+      expect(testEnv.getOrDefault('FOO_BAR', null)).toBeNull();
+
+      delete process.env.FOO_BAR;
+    });
+
+    it('should return the override value if it is specified', () => {
+      process.env.FOO_BAR = '1';
+      
+      testEnv.overrideVariable('FOO_BAR', 2);
+
+      expect(testEnv.getOrDefault('FOO_BAR', 0)).toEqual(2);
+
+      testEnv.removeOverriddenVariable('FOO_BAR');
 
       delete process.env.FOO_BAR;
     });

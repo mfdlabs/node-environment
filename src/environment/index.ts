@@ -33,8 +33,13 @@ export type DefaultValueGetter<T> = T | (() => T);
  * A type that represents all the possible types of environment variables. Use this if you want your environment variable to be of a specific type or if you want the default to
  * be null or undefined.
  */
-type EnvironmentVariableType = 'boolean' | 'number' | 'bigint' | 'object' | 'regexp' | 'string';
-type EnvironmentVariableArrayType = `array<${EnvironmentVariableType}>`;
+export type EnvironmentVariableType = 'boolean' | 'number' | 'bigint' | 'object' | 'regexp' | 'string';
+
+/**
+ * A type that represents all the possible array types of environment variables. Use this if you want your environment variable to be of a specific array type or if you want the
+ * default to be null or undefined.
+ */
+export type EnvironmentVariableArrayType = `array<${EnvironmentVariableType}>`;
 
 /**
  * A class for loading environment variables from .env files programmatically.
@@ -48,27 +53,69 @@ export default class Environment {
   private static _isDocker?: boolean = undefined;
 
   /**
+   * @internal This is a private member.
+   */
+  private _overriddenVariables: Map<string, unknown> = new Map();
+
+  /**
+   * Returns true if the current variable is overridden.
+   * @param {string} variable The variable to check.
+   * @returns {boolean} True if the variable is overridden.
+   */
+  public isVariableOverridden(variable: string): boolean {
+    return this._overriddenVariables.has(variable);
+  }
+
+  /**
+   * Returns the value of the overridden variable.
+   * @param {string} variable The variable to get the value of.
+   * @template T The type of the variable.
+   * @returns {T} The value of the variable.
+   */
+  public getOverridenVariable<T = unknown>(variable: string): T {
+    return this._overriddenVariables.get(variable) as unknown as T;
+  }
+
+  /**
+   * Sets the value of the overridden variable.
+   * @param {string} variable The variable to set the value of.
+   * @param {T} value The value to set.
+   * @template T The type of the variable.
+   * @returns {void} Nothing.
+   */
+  public overrideVariable<T = unknown>(variable: string, value: T): void {
+    this._overriddenVariables.set(variable, value);
+  }
+
+  /**
+   * Removes the overridden variable.
+   * @param {string} variable The variable to remove.
+   * @returns {void} Nothing.
+   */
+  public removeOverriddenVariable(variable: string): void {
+    this._overriddenVariables.delete(variable);
+  }
+
+  /**
    * Tries to get then deserialize the value of the environment variable..
    *
    * @param {string} key The key of the environment variable.
    * @param {DefaultValueGetter<T>} [defaultValue] The default value of the environment variable.
    * @param {EnvironmentVariableType | EnvironmentVariableArrayType} [optionalType] The type of the environment variable.
-   * @returns {T} The value of the environment variable.
    * @template T The type of the environment variable.
-   * @protected This method is a protected method of the Environment class.
-   * @memberof Environment
+   * @returns {T} The value of the environment variable.
    */
-  protected getOrDefault<T>(
+  public getOrDefault<T = unknown>(
     key: string,
     defaultValue?: DefaultValueGetter<T>,
     optionalType?: EnvironmentVariableType | EnvironmentVariableArrayType,
   ): T {
+    if (this.isVariableOverridden(key)) return this.getOverridenVariable(key);
+
     let type: string = optionalType ?? typeof defaultValue;
 
     // If default value is null, undefined or any type that cannot be inferred then throw
-    if (defaultValue === null || defaultValue === undefined) {
-      type = optionalType;
-    }
+    if (defaultValue === null || defaultValue === undefined) type = optionalType || 'string';
 
     const value = process.env[key];
 

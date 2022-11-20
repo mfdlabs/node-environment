@@ -24,6 +24,8 @@
 
 /**
  * Represents a method that converts the given value to the given type.
+ * 
+ * @internal This type is only ingested internally.
  */
 export type TypeConverter<T> = (value: any) => T;
 
